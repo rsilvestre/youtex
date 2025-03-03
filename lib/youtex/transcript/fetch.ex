@@ -15,7 +15,7 @@ defmodule Youtex.Transcript.Fetch do
     |> to_transcript_list()
   end
 
-  @spec transcript_sentences(Transcript.t) :: transcript_found | error
+  @spec transcript_sentences(Transcript.t()) :: transcript_found | error
   def transcript_sentences(transcript) do
     sentences =
       transcript.url
@@ -26,7 +26,6 @@ defmodule Youtex.Transcript.Fetch do
       0 -> {:error, :not_found}
       _ -> {:ok, %{transcript | sentences: sentences ++ transcript.sentences}}
     end
-
   end
 
   defp page_html(video) do

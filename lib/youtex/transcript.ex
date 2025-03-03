@@ -25,8 +25,8 @@ defmodule Youtex.Transcript do
   use TypedStruct
 
   typedstruct enforce: true do
-    field :url, String.t
-    field :name, String.t
+    field :url, String.t()
+    field :name, String.t()
     field :language_code, language
     field :generated, boolean
     field :sentences, sentence_list, default: []
@@ -39,7 +39,7 @@ defmodule Youtex.Transcript do
       url: url(caption),
       name: name(caption),
       language_code: language_code(caption),
-      generated: generated(caption),
+      generated: generated(caption)
     }
   end
 
@@ -65,5 +65,4 @@ defmodule Youtex.Transcript do
 
   defp transcript_found_or_error(nil), do: {:error, :not_found}
   defp transcript_found_or_error(transcript), do: {:ok, transcript}
-
 end

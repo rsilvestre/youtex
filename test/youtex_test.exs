@@ -5,8 +5,10 @@ defmodule YoutexTest do
   alias Youtex.Transcript
   import Youtex
 
-  @en_only_video_id "guc16D_0Imk"  # ElixirConf 2020 - José Valim
-  @en_pt_video_id "lxYFOM3UJzo" # Elixir: The Documentary
+  # ElixirConf 2020 - José Valim
+  @en_only_video_id "guc16D_0Imk"
+  # Elixir: The Documentary
+  @en_pt_video_id "lxYFOM3UJzo"
 
   describe "Youtex.list_transcripts/1" do
     setup [:en_only_video]
