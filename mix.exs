@@ -1,7 +1,7 @@
 defmodule Youtex.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
 
   def project do
     [
@@ -24,20 +24,19 @@ defmodule Youtex.MixProject do
 
   def application do
     [
-      applications: [:elixir_xml_to_map],
-      extra_applications: [:logger, :poison, :httpoison, :typed_struct]
+      extra_applications: [:logger, :poison, :httpoison, :typed_struct, :elixir_xml_to_map]
     ]
   end
 
   defp deps do
     [
       {:elixir_xml_to_map, "~> 2.0"},
-      {:ex_doc, "~> 0.25", only: :dev, runtime: false},
-      {:poison, "~> 5.0"},
-      {:httpoison, "~> 1.8"},
-      {:typed_struct, "~> 0.2"},
-      {:dialyxir, "~> 1.1", only: [:dev], runtime: false},
-      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.37", only: :dev, runtime: false},
+      {:poison, "~> 6.0"},
+      {:httpoison, "~> 2.2"},
+      {:typed_struct, "~> 0.3"},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
