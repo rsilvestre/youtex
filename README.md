@@ -94,7 +94,13 @@ transcript = Youtex.get_transcription!("lxYFOM3UJzo", "en")
 
 ## Caching
 
-Youtex includes a built-in caching mechanism to improve performance and reduce API calls to YouTube. The cache is implemented using ETS tables and is automatically enabled when used as an application.
+Youtex includes a flexible caching mechanism to improve performance and reduce API calls to YouTube. 
+The cache system supports multiple backend options:
+
+- **Memory**: In-memory cache using ETS tables (default, fast but not persistent)
+- **Disk**: Persistent local storage using DETS (survives application restarts)
+- **S3**: Cloud storage using AWS S3 (survives restarts and shareable across instances)
+- **Cachex**: Distributed caching using Cachex (supports horizontal scaling across multiple nodes)
 
 ### Using Caching
 
@@ -112,12 +118,125 @@ You can configure cache behavior in your config:
 ```elixir
 # In config/config.exs
 config :youtex, 
-  # TTL (time-to-live) - 1 day in milliseconds (default)
-  cache_ttl: 86_400_000,
+  # General cache settings
+  cache_ttl: 86_400_000,                    # TTL (time-to-live) - 1 day in milliseconds (default)
+  cache_cleanup_interval: 3_600_000,        # Cleanup interval - every hour (default)
   
-  # Maximum number of entries in each cache table (default: 1000)
-  cache_max_size: 1000
+  # Configure which backend to use for each cache type
+  cache_backends: %{
+    # Memory backend (default)
+    transcript_lists: %{
+      backend: Youtex.Cache.MemoryBackend,
+      backend_options: [
+        table_name: :transcript_lists_cache,
+        max_size: 1000                       # Max entries in memory
+      ]
+    },
+    
+    # Disk backend example
+    transcript_contents: %{
+      backend: Youtex.Cache.DiskBackend,
+      backend_options: [
+        table_name: :transcript_contents_cache, 
+        cache_dir: "priv/youtex_cache",      # Directory for cache files
+        max_size: 10000                      # Max entries on disk
+      ]
+    }
+  }
 ```
+
+#### Using S3 Backend
+
+To use the S3 backend, you must add the following optional dependencies to your mix.exs:
+
+```elixir
+{:ex_aws, "~> 2.5"},
+{:ex_aws_s3, "~> 2.4"},
+{:sweet_xml, "~> 0.7"},
+{:configparser_ex, "~> 4.0", optional: true}
+```
+
+Then configure the backend:
+
+```elixir
+config :youtex, 
+  cache_backends: %{
+    transcript_lists: %{
+      backend: Youtex.Cache.S3Backend,
+      backend_options: [
+        bucket: "youtex-cache",              # S3 bucket name
+        prefix: "transcripts",               # Prefix for objects
+        region: "us-east-1"                  # AWS region
+      ]
+    }
+  }
+```
+
+#### Using Cachex Backend for Distributed Caching
+
+For applications with horizontal scaling, the Cachex backend provides distributed caching across multiple nodes. To use it, add the following optional dependency to your mix.exs:
+
+```elixir
+{:cachex, "~> 3.6"}
+```
+
+Then configure the backend:
+
+```elixir
+config :youtex, 
+  cache_backends: %{
+    transcript_lists: %{
+      backend: Youtex.Cache.CachexBackend,
+      backend_options: [
+        table_name: :transcript_lists_cache,  # Cache name
+        distributed: true,                    # Enable distributed mode
+        default_ttl: :timer.hours(24),        # TTL for cache entries
+        cleanup_interval: :timer.minutes(10), # How often to clean expired entries
+        cachex_options: []                    # Additional Cachex options
+      ]
+    }
+  }
+```
+
+To use distributed caching, you need to connect your Elixir nodes in a cluster. For example:
+
+```elixir
+# On node1@example.com
+Node.connect(:"node2@example.com")
+
+# On node2@example.com
+Node.connect(:"node1@example.com") 
+```
+
+In a production environment, you would typically use a library like [libcluster](https://github.com/bitwalker/libcluster) to handle node discovery and connection automatically.
+
+#### AWS Credentials for S3 Backend
+
+When using the S3 backend, you need to provide AWS credentials in one of the following ways:
+
+1. **Environment variables**:
+   ```
+   AWS_ACCESS_KEY_ID=your_key
+   AWS_SECRET_ACCESS_KEY=your_secret
+   ```
+
+2. **AWS credentials file** at `~/.aws/credentials`:
+   ```
+   [default]
+   aws_access_key_id = your_key
+   aws_secret_access_key = your_secret
+   ```
+
+3. **Application config**:
+   ```elixir
+   # In config/config.exs
+   config :ex_aws,
+     access_key_id: "your_key",
+     secret_access_key: "your_secret",
+     region: "your-region"
+   ```
+
+ExAws automatically checks these locations in order. See the [ExAws documentation](https://github.com/ex-aws/ex_aws) for more configuration options.
 
 ### Cache Operations
 
@@ -129,7 +248,7 @@ Youtex.use_cache?()
 Youtex.clear_cache()
 ```
 
-When caching is enabled, transcript lists and transcript contents are stored separately with their own TTL. The cache is automatically cleaned up periodically to prevent memory issues.
+When caching is enabled, transcript lists and transcript contents are stored with their own TTL. The cache is automatically cleaned up periodically to prevent storage issues.
 
 ## Data Structures
 
@@ -221,6 +340,58 @@ end
 - YouTube's API structure might change, which could impact functionality
 - Some auto-generated transcripts may have poor quality or accuracy
 - YouTube rate limiting may apply when making many requests in a short time
+
+### Distributed Caching Considerations
+
+When using the CachexBackend for horizontal scaling:
+
+1. **Node Connectivity**: Ensure all nodes can communicate with each other through proper network configuration
+2. **Node Discovery**: Use a library like [libcluster](https://github.com/bitwalker/libcluster) for reliable node discovery and connection
+3. **Cache Consistency**: Be aware that there can be a short delay before cache updates propagate to all nodes
+4. **Node Naming**: Nodes must have proper names (not anonymous) - use `--name node1@ip` or `--sname node1` when starting your application
+5. **Cookie Configuration**: All nodes must share the same Erlang cookie for security
+
+## Future Improvements
+
+Below is a list of potential improvements for the project:
+
+### Cache System
+- [ ] Implement proper supervision tree for cache components
+- [ ] Add circuit breaker pattern for external backends
+- [ ] Integrate Telemetry for cache metrics (hits, misses, performance)
+- [ ] Enhance distributed cache consistency guarantees
+- [ ] Implement exponential backoff for S3 operations
+
+### Testing
+- [ ] Add integration tests for distributed caching with multiple nodes
+- [ ] Implement property-based testing using StreamData
+- [ ] Create comprehensive tests for S3 backend
+- [ ] Use ExVCR to mock HTTP requests for YouTube API
+
+### Error Handling
+- [ ] Replace generic error atoms with structured error types
+- [ ] Implement cascading fallback strategies
+- [ ] Add structured logging with context for debugging
+- [ ] Introduce configurable timeouts for HTTP client
+
+### Features
+- [ ] Implement parallel fetching for multiple transcripts
+- [ ] Add support for different transcript formats (SRT, VTT)
+- [ ] Create text search functionality within transcripts
+- [ ] Add configurable rate limiting for YouTube API calls
+- [ ] Support for authenticated access to private/unlisted videos
+
+### Performance
+- [ ] Use streams for processing large transcripts
+- [ ] Optimize cache serialization with more efficient protocols
+- [ ] Implement connection pooling for HTTP requests
+- [ ] Add lazy loading for transcript sentences
+
+### Modern Practices
+- [ ] Use NimbleOptions for option validation
+- [ ] Reorganize modules around domain concepts
+- [ ] Add LiveBook examples for interactive documentation
+- [ ] Implement runtime configuration validation
 
 ## License
 

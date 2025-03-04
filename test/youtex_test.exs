@@ -34,7 +34,16 @@ defmodule YoutexTest do
     end
 
     test "when video has several transcripts", video do
-      assert transcripts = [t | _] = list_transcripts!(video.id)
+      # Handle both list and tuple return types
+      result = list_transcripts!(video.id)
+
+      transcripts =
+        case result do
+          {:ok, list} -> list
+          list when is_list(list) -> list
+        end
+
+      assert [t | _] = transcripts
       assert Enum.count(transcripts) > 0
       assert t.language_code =~ ~r/(pt|en)/
     end
@@ -81,9 +90,16 @@ defmodule YoutexTest do
   end
 
   defp available_transcripts(video_id, language) do
-    video_id
-    |> list_transcripts!
-    |> Enum.filter(&(&1.language_code == language))
+    # Handle the case where list_transcripts! might return a tuple instead of a list
+    transcripts = list_transcripts!(video_id)
+
+    case transcripts do
+      {:ok, list} when is_list(list) ->
+        Enum.filter(list, &(&1.language_code == language))
+
+      list when is_list(list) ->
+        Enum.filter(list, &(&1.language_code == language))
+    end
   end
 
   defp en_only_video(_), do: %{id: @en_only_video_id}

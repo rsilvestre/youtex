@@ -12,10 +12,39 @@ defmodule Youtex do
 
   @doc """
   Starts the Youtex application with caching enabled.
-  Call this function when you want to use caching for transcripts.
+  Call this function when you want to use caching for transcripts outside
+  of a supervision tree.
+
+  ## Options
+
+  * `:backends` - A map of cache backend configurations (optional)
+  * `:ttl` - Cache TTL in milliseconds (optional)
+
+  ## Examples
+
+      # Start with default memory backend
+      Youtex.start()
+      
+      # Start with custom configuration
+      Youtex.start(backends: %{
+        transcript_lists: %{
+          backend: Youtex.Cache.DiskBackend,
+          backend_options: [cache_dir: "my_cache_dir"]
+        }
+      })
   """
-  def start do
-    Cache.start_link()
+  def start(opts \\ []) do
+    # If specific backends are provided, update application env
+    if backend_config = Keyword.get(opts, :backends) do
+      Application.put_env(:youtex, :cache_backends, backend_config)
+    end
+
+    # If TTL is provided, update application env
+    if ttl = Keyword.get(opts, :ttl) do
+      Application.put_env(:youtex, :cache_ttl, ttl)
+    end
+
+    Cache.start_link(Keyword.get(opts, :cache_opts, []))
   end
 
   @doc """

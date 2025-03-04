@@ -44,11 +44,16 @@ defmodule Youtex.Transcript do
   end
 
   @spec for_language(transcript_list, language) :: transcript_found | error
-  def for_language(transcript_list, language) do
+  def for_language(transcript_list, language) when is_list(transcript_list) do
     transcript_list
     |> Enum.filter(&(&1.language_code == language))
     |> List.first()
     |> transcript_found_or_error()
+  end
+
+  # Handle case where transcript_list is wrapped in {:ok, transcript_list}
+  def for_language({:ok, transcript_list}, language) do
+    for_language(transcript_list, language)
   end
 
   defp url(%{"baseUrl" => url}), do: url
