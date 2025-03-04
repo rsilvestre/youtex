@@ -25,3 +25,8 @@ youtex-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+# Cache directory contents
+/priv/youtex_cache/**
+# But keep the directory structure
+!/priv/youtex_cache/.gitkeep

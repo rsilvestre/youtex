@@ -111,6 +111,20 @@ If using Youtex as an application (included in your supervision tree), caching i
 Youtex.start()
 ```
 
+### Important Note for Disk Cache
+
+When using the disk cache backend, you must ensure the cache directory exists before starting the application:
+
+```bash
+# Create the cache directory structure if it doesn't exist
+mkdir -p priv/youtex_cache
+```
+
+For production deployments, this directory should be:
+1. Created as part of your deployment process
+2. Have proper file permissions for the user running the application
+3. Be part of your release, but excluded from version control (add to .gitignore)
+
 ### Cache Configuration
 
 You can configure cache behavior in your config:
@@ -350,6 +364,197 @@ When using the CachexBackend for horizontal scaling:
 3. **Cache Consistency**: Be aware that there can be a short delay before cache updates propagate to all nodes
 4. **Node Naming**: Nodes must have proper names (not anonymous) - use `--name node1@ip` or `--sname node1` when starting your application
 5. **Cookie Configuration**: All nodes must share the same Erlang cookie for security
+
+## Production Deployment
+
+When deploying Youtex in a production environment, you need to take additional steps to ensure the cache system works correctly:
+
+### Using Releases
+
+Using Elixir releases is recommended for production deployments:
+
+```bash
+# Generate a release
+MIX_ENV=prod mix release
+
+# Run the release
+_build/prod/rel/youtex/bin/youtex start
+```
+
+### Directory Structure
+
+For disk caching to work in production with releases:
+
+1. Create the `priv/youtex_cache` directory before starting the application:
+
+```bash
+# Create required directories in your production environment
+mkdir -p /app/priv/youtex_cache
+chmod 755 /app/priv/youtex_cache
+```
+
+2. Update your release configuration in `mix.exs` to include the `priv` directory:
+
+```elixir
+def project do
+  [
+    # ...
+    releases: [
+      youtex: [
+        include_erts: true,
+        include_executables_for: [:unix],
+        applications: [
+          youtex: :permanent
+        ],
+        # Copy priv directory to the release
+        steps: [:assemble, :tar]
+      ]
+    ],
+    # ...
+  ]
+end
+```
+
+### Runtime Configuration
+
+Create a `config/releases.exs` file for runtime configuration:
+
+```elixir
+import Config
+
+# Configure cache backends for production
+config :youtex,
+  cache_backends: %{
+    transcript_lists: %{
+      backend: Youtex.Cache.DiskBackend,
+      backend_options: [
+        table_name: :transcript_lists_cache,
+        # Use absolute path in production
+        cache_dir: "/app/priv/youtex_cache",
+        max_size: 10000
+      ]
+    },
+    transcript_contents: %{
+      backend: Youtex.Cache.DiskBackend,
+      backend_options: [
+        table_name: :transcript_contents_cache,
+        cache_dir: "/app/priv/youtex_cache",
+        max_size: 10000
+      ]
+    }
+  }
+
+# For containerized deployments, you might want to use environment variables
+if System.get_env("CACHE_DIR") do
+  config :youtex,
+    cache_backends: %{
+      transcript_lists: %{
+        backend: Youtex.Cache.DiskBackend,
+        backend_options: [
+          table_name: :transcript_lists_cache,
+          cache_dir: System.get_env("CACHE_DIR", "/app/priv/youtex_cache"),
+          max_size: String.to_integer(System.get_env("CACHE_MAX_SIZE", "10000"))
+        ]
+      },
+      transcript_contents: %{
+        backend: Youtex.Cache.DiskBackend,
+        backend_options: [
+          table_name: :transcript_contents_cache,
+          cache_dir: System.get_env("CACHE_DIR", "/app/priv/youtex_cache"),
+          max_size: String.to_integer(System.get_env("CACHE_MAX_SIZE", "10000"))
+        ]
+      }
+    }
+end
+
+# For distributed deployments with Cachex
+if System.get_env("USE_DISTRIBUTED_CACHE") == "true" do
+  config :youtex,
+    cache_backends: %{
+      transcript_lists: %{
+        backend: Youtex.Cache.CachexBackend,
+        backend_options: [
+          table_name: :transcript_lists_cache,
+          distributed: true
+        ]
+      },
+      transcript_contents: %{
+        backend: Youtex.Cache.CachexBackend,
+        backend_options: [
+          table_name: :transcript_contents_cache,
+          distributed: true
+        ]
+      }
+    }
+end
+```
+
+### Docker Deployment
+
+If using Docker, ensure your Dockerfile includes steps to create the cache directory:
+
+```dockerfile
+FROM elixir:1.14-alpine AS build
+
+# Build application...
+
+FROM alpine:3.18 AS app
+
+# Copy release from build stage...
+
+# Create cache directory and set permissions
+RUN mkdir -p /app/priv/youtex_cache && \
+    chmod 755 /app/priv/youtex_cache
+
+# Set working directory and run the release
+WORKDIR /app
+CMD ["bin/youtex", "start"]
+```
+
+### Kubernetes Deployment
+
+When deploying to Kubernetes, use a persistent volume for the cache directory:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: youtex-cache-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: youtex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: youtex
+  template:
+    metadata:
+      labels:
+        app: youtex
+    spec:
+      containers:
+      - name: youtex
+        image: your-registry/youtex:latest
+        env:
+        - name: CACHE_DIR
+          value: "/app/priv/youtex_cache"
+        volumeMounts:
+        - name: cache-volume
+          mountPath: /app/priv/youtex_cache
+      volumes:
+      - name: cache-volume
+        persistentVolumeClaim:
+          claimName: youtex-cache-pvc
+```
 
 ## Future Improvements
 
