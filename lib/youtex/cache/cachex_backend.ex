@@ -54,26 +54,60 @@ defmodule Youtex.Cache.CachexBackend do
 
   @behaviour Youtex.Cache.Backend
 
+  @options_schema [
+    table_name: [
+      type: :atom,
+      default: :youtex_cache,
+      doc: "Cache table name used by Cachex"
+    ],
+    distributed: [
+      type: :boolean,
+      default: false,
+      doc: "Enable distributed caching across Erlang nodes"
+    ],
+    default_ttl: [
+      type: {:or, [:integer, {:in, [:infinity]}]},
+      default: :timer.hours(24),
+      doc: "Default time-to-live for cache entries in milliseconds"
+    ],
+    cleanup_interval: [
+      type: :integer,
+      default: :timer.minutes(10),
+      doc: "Interval in milliseconds for cleaning expired entries"
+    ],
+    cachex_options: [
+      type: :keyword_list,
+      default: [],
+      doc: "Additional options passed directly to Cachex.start_link/2"
+    ]
+  ]
+
   # Backend Implementation
 
   @impl true
   def init(options) do
-    with {:ok, _} <- ensure_dependencies_loaded(),
-         cache_config <- build_cache_config(options),
-         {:ok, _} <- start_cachex(cache_config) do
-      {:ok, %{cache: cache_config.cache_name}}
-    else
-      {:error, reason} -> {:error, reason}
+    case NimbleOptions.validate(options, @options_schema) do
+      {:ok, validated_options} ->
+        with {:ok, _} <- ensure_dependencies_loaded(),
+             cache_config <- build_cache_config(validated_options),
+             {:ok, _} <- start_cachex(cache_config) do
+          {:ok, %{cache: cache_config.cache_name}}
+        else
+          {:error, reason} -> {:error, reason}
+        end
+        
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, Exception.message(error)}
     end
   end
 
   # Extract configuration from options
   defp build_cache_config(options) do
-    cache_name = Keyword.get(options, :table_name, :youtex_cache)
-    distributed = Keyword.get(options, :distributed, false)
-    default_ttl = Keyword.get(options, :default_ttl, :timer.hours(24))
-    cleanup_interval = Keyword.get(options, :cleanup_interval, :timer.minutes(10))
-    additional_opts = Keyword.get(options, :cachex_options, [])
+    cache_name = options[:table_name]
+    distributed = options[:distributed]
+    default_ttl = options[:default_ttl]
+    cleanup_interval = options[:cleanup_interval]
+    additional_opts = options[:cachex_options]
     
     nodes = if(distributed and Node.alive?(), do: Node.list(), else: [])
     

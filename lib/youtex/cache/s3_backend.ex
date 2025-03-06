@@ -10,6 +10,14 @@ defmodule Youtex.Cache.S3Backend do
   - ex_aws_s3
   - sweet_xml
   - configparser_ex (optional, for reading AWS credentials from files)
+  
+  ## Configuration
+  
+  The S3Backend supports the following options:
+  
+  * `:bucket` - S3 bucket name (defaults to "youtex-cache")
+  * `:prefix` - Prefix for cache objects in the bucket (defaults to "cache")
+  * `:region` - AWS region (defaults to "us-east-1")
   """
 
   @behaviour Youtex.Cache.Backend
@@ -19,27 +27,49 @@ defmodule Youtex.Cache.S3Backend do
   @default_region "us-east-1"
   @registry_file "registry.bin"
 
+  @options_schema [
+    bucket: [
+      type: :string,
+      default: @default_bucket,
+      doc: "S3 bucket name for storing cache objects"
+    ],
+    prefix: [
+      type: :string,
+      default: @default_prefix,
+      doc: "Prefix for cache objects in the bucket"
+    ],
+    region: [
+      type: :string,
+      default: @default_region,
+      doc: "AWS region for the S3 bucket"
+    ]
+  ]
+
   # Backend Implementation
 
   @impl true
   def init(options) do
-    case ensure_dependencies_loaded() do
-      {:ok, _} ->
-        bucket = Keyword.get(options, :bucket, @default_bucket)
-        prefix = Keyword.get(options, :prefix, @default_prefix)
-        region = Keyword.get(options, :region, @default_region)
+    with {:ok, _} <- ensure_dependencies_loaded(),
+         {:ok, validated_options} <- NimbleOptions.validate(options, @options_schema) do
+      
+      bucket = validated_options[:bucket]
+      prefix = validated_options[:prefix]
+      region = validated_options[:region]
 
-        # Load the registry if it exists
-        registry = load_registry(bucket, prefix)
+      # Load the registry if it exists
+      registry = load_registry(bucket, prefix)
 
-        {:ok,
-         %{
-           bucket: bucket,
-           prefix: prefix,
-           region: region,
-           registry: registry
-         }}
-
+      {:ok,
+       %{
+         bucket: bucket,
+         prefix: prefix,
+         region: region,
+         registry: registry
+       }}
+    else
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, Exception.message(error)}
+        
       {:error, reason} ->
         {:error, reason}
     end

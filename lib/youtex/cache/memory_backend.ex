@@ -4,27 +4,58 @@ defmodule Youtex.Cache.MemoryBackend do
 
   This backend stores cache entries in memory using ETS tables.
   It is fast but not persistent across application restarts.
+
+  ## Configuration
+
+  The MemoryBackend supports the following options:
+
+  * `:table_name` - The name of the ETS table to use (defaults to `:youtex_cache`)
+  * `:max_size` - Maximum number of entries in the cache (defaults to 1000)
   """
 
   @behaviour Youtex.Cache.Backend
 
   @default_max_size 1000
 
+  @options_schema [
+    table_name: [
+      type: :atom,
+      default: :youtex_cache, 
+      doc: "The name of the ETS table to use for cache storage"
+    ],
+    max_size: [
+      type: {:custom, __MODULE__, :validate_positive_integer, []},
+      default: @default_max_size,
+      doc: "Maximum number of entries in the cache"
+    ]
+  ]
+
+  # Custom validator for positive integers
+  def validate_positive_integer(value) when is_integer(value) and value > 0, do: {:ok, value}
+  def validate_positive_integer(value), do: {:error, "expected a positive integer, got: #{inspect(value)}"}
+
   # Backend Implementation
 
   @impl true
   def init(options) do
-    table_name = Keyword.get(options, :table_name, :youtex_cache)
-    table_options = [:set, :public, :named_table]
+    case NimbleOptions.validate(options, @options_schema) do
+      {:ok, validated_options} ->
+        table_name = validated_options[:table_name]
+        max_size = validated_options[:max_size]
+        table_options = [:set, :public, :named_table]
 
-    case :ets.info(table_name) do
-      :undefined ->
-        :ets.new(table_name, table_options)
-        {:ok, %{table: table_name, max_size: Keyword.get(options, :max_size, @default_max_size)}}
+        case :ets.info(table_name) do
+          :undefined ->
+            :ets.new(table_name, table_options)
+            {:ok, %{table: table_name, max_size: max_size}}
 
-      _ ->
-        # Table already exists
-        {:ok, %{table: table_name, max_size: Keyword.get(options, :max_size, @default_max_size)}}
+          _ ->
+            # Table already exists
+            {:ok, %{table: table_name, max_size: max_size}}
+        end
+
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, Exception.message(error)}
     end
   end
 

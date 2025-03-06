@@ -4,6 +4,14 @@ defmodule Youtex.Cache.DiskBackend do
 
   This backend stores cache entries on disk, making them persistent across application restarts.
   It uses DETS tables under the hood, which are disk-based implementations of ETS.
+  
+  ## Configuration
+
+  The DiskBackend supports the following options:
+
+  * `:table_name` - The name of the DETS table to use (defaults to `:youtex_disk_cache`)
+  * `:cache_dir` - Directory to store the cache files (defaults to "priv/youtex_cache")
+  * `:max_size` - Maximum number of entries in the cache (defaults to 10,000)
   """
 
   @behaviour Youtex.Cache.Backend
@@ -12,31 +20,55 @@ defmodule Youtex.Cache.DiskBackend do
   # More entries for disk cache
   @default_max_size 10_000
 
+  @options_schema [
+    table_name: [
+      type: :atom,
+      default: :youtex_disk_cache,
+      doc: "The name of the DETS table to use for cache storage"
+    ],
+    cache_dir: [
+      type: :string,
+      default: @default_cache_dir,
+      doc: "Directory to store the cache files"
+    ],
+    max_size: [
+      type: {:custom, Youtex.Cache.MemoryBackend, :validate_positive_integer, []},
+      default: @default_max_size,
+      doc: "Maximum number of entries in the cache"
+    ]
+  ]
+
   # Backend Implementation
 
   @impl true
   def init(options) do
-    table_name = Keyword.get(options, :table_name, :youtex_disk_cache)
-    cache_dir = Keyword.get(options, :cache_dir, @default_cache_dir)
-    max_size = Keyword.get(options, :max_size, @default_max_size)
+    case NimbleOptions.validate(options, @options_schema) do
+      {:ok, validated_options} ->
+        table_name = validated_options[:table_name]
+        cache_dir = validated_options[:cache_dir]
+        max_size = validated_options[:max_size]
 
-    # Ensure cache directory exists
-    File.mkdir_p!(cache_dir)
+        # Ensure cache directory exists
+        File.mkdir_p!(cache_dir)
 
-    file_path = Path.join(cache_dir, "#{table_name}.dets")
+        file_path = Path.join(cache_dir, "#{table_name}.dets")
 
-    case :dets.open_file(table_name,
-           type: :set,
-           file: to_charlist(file_path),
-           # Save every minute
-           auto_save: 60_000,
-           ram_file: false
-         ) do
-      {:ok, table} ->
-        {:ok, %{table: table, max_size: max_size}}
+        case :dets.open_file(table_name,
+               type: :set,
+               file: to_charlist(file_path),
+               # Save every minute
+               auto_save: 60_000,
+               ram_file: false
+             ) do
+          {:ok, table} ->
+            {:ok, %{table: table, max_size: max_size}}
 
-      {:error, reason} ->
-        {:error, reason}
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, Exception.message(error)}
     end
   end
 
