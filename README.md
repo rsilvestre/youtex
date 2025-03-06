@@ -159,6 +159,23 @@ config :youtex,
   }
 ```
 
+All cache backend options are validated using NimbleOptions, providing:
+
+1. Strong type checking and validation of configuration values
+2. Comprehensive error messages for misconfiguration
+3. Self-documented options with defaults
+
+For example, if you provide an invalid value like a negative max_size:
+
+```elixir
+backend_options: [max_size: -100]  # Invalid negative value
+```
+
+You'll receive a helpful error message:
+```
+"expected a positive integer, got: -100"
+```
+
 #### Using S3 Backend
 
 To use the S3 backend, you must add the following optional dependencies to your mix.exs:
@@ -593,7 +610,7 @@ Below is a list of potential improvements for the project:
 - [ ] Add lazy loading for transcript sentences
 
 ### Modern Practices
-- [ ] Use NimbleOptions for option validation
+- [x] Use NimbleOptions for option validation
 - [ ] Reorganize modules around domain concepts
 - [ ] Add LiveBook examples for interactive documentation
 - [ ] Implement runtime configuration validation
