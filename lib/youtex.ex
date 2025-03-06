@@ -54,12 +54,19 @@ defmodule Youtex do
   @spec list_transcripts(video_id) :: transcripts_found | error
   def list_transcripts(video_id) do
     case use_cache?() && Cache.get_transcript_list(video_id) do
-      nil ->
+      {:miss, nil} ->
         # Not in cache, fetch and cache it
         fetch_and_cache_transcript_list(video_id)
-
-      cached_result ->
-        cached_result
+        
+      {:ok, result} ->
+        {:ok, result}
+        
+      {:error, _reason} = error ->
+        error
+        
+      _other ->
+        # Fallback for unexpected responses
+        fetch_and_cache_transcript_list(video_id)
     end
   end
 
@@ -98,12 +105,19 @@ defmodule Youtex do
   @spec get_transcription(video_id, language) :: transcript_found | error
   def get_transcription(video_id, language \\ @default_language) do
     case use_cache?() && Cache.get_transcript_content(video_id, language) do
-      nil ->
+      {:miss, nil} ->
         # Not in cache, fetch and cache it
         fetch_and_cache_transcript_content(video_id, language)
-
-      cached_result ->
-        cached_result
+        
+      {:ok, result} ->
+        {:ok, result}
+        
+      {:error, _reason} = error ->
+        error
+        
+      _other ->
+        # Fallback for unexpected responses
+        fetch_and_cache_transcript_content(video_id, language)
     end
   end
 

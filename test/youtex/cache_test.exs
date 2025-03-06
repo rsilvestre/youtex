@@ -105,9 +105,9 @@ defmodule Youtex.CacheTest do
     end
   end
 
-  test "returns nil for non-existent items" do
-    assert Cache.get_transcript_list("non_existent_id") == nil
-    assert Cache.get_transcript_content("non_existent_id", "en") == nil
+  test "returns {:miss, nil} for non-existent items" do
+    assert Cache.get_transcript_list("non_existent_id") == {:miss, nil}
+    assert Cache.get_transcript_content("non_existent_id", "en") == {:miss, nil}
   end
 
   test "clear removes all cached items" do
@@ -138,7 +138,7 @@ defmodule Youtex.CacheTest do
     Cache.clear()
 
     # Verify item is gone
-    assert Cache.get_transcript_list(video_id) == nil
+    assert Cache.get_transcript_list(video_id) == {:miss, nil}
   end
   
   @tag :cachex

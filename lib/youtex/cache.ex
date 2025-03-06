@@ -36,7 +36,7 @@ defmodule Youtex.Cache do
   @doc """
   Gets transcript list from cache or returns nil if not found.
   """
-  @spec get_transcript_list(video_id) :: {:ok, transcript_list} | nil
+  @spec get_transcript_list(video_id) :: {:ok, transcript_list} | {:miss, nil} | {:error, term()}
   def get_transcript_list(video_id) do
     GenServer.call(__MODULE__, {:get, @transcript_lists_cache, video_id})
   end
@@ -54,7 +54,7 @@ defmodule Youtex.Cache do
   @doc """
   Gets transcript content from cache or returns nil if not found.
   """
-  @spec get_transcript_content(String.t(), String.t()) :: {:ok, Transcript.t()} | nil
+  @spec get_transcript_content(String.t(), String.t()) :: {:ok, Transcript.t()} | {:miss, nil} | {:error, term()}
   def get_transcript_content(video_id, language) do
     key = "#{video_id}:#{language}"
     GenServer.call(__MODULE__, {:get, @transcript_contents_cache, key})
@@ -103,7 +103,8 @@ defmodule Youtex.Cache do
   def handle_call({:get, cache_name, key}, _from, state) do
     {backend_module, backend_state} = Map.get(state.backends, cache_name)
     result = backend_module.get(key, backend_state)
-    {:reply, result, state}
+    formatted_result = Youtex.Cache.Response.format(result)
+    {:reply, formatted_result, state}
   end
 
   @impl true
@@ -119,7 +120,8 @@ defmodule Youtex.Cache do
         {:reply, :ok, %{state | backends: new_backends}}
 
       error ->
-        {:reply, error, state}
+        formatted_error = Youtex.Cache.Response.format(error)
+        {:reply, formatted_error, state}
     end
   end
 
