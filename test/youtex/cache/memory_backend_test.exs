@@ -17,7 +17,7 @@ defmodule Youtex.Cache.MemoryBackendTest do
     assert :ok = MemoryBackend.put(test_key, test_value, ttl, state)
 
     # Retrieve value
-    assert {:ok, ^test_value} = MemoryBackend.get(test_key, state)
+    assert ^test_value = MemoryBackend.get(test_key, state)
   end
 
   test "returns nil for non-existent keys", %{state: state} do
@@ -46,8 +46,8 @@ defmodule Youtex.Cache.MemoryBackendTest do
     :ok = MemoryBackend.put("key2", "value2", 10_000, state)
 
     # Verify entries exist
-    assert {:ok, "value1"} = MemoryBackend.get("key1", state)
-    assert {:ok, "value2"} = MemoryBackend.get("key2", state)
+    assert "value1" = MemoryBackend.get("key1", state)
+    assert "value2" = MemoryBackend.get("key2", state)
 
     # Clear all entries
     :ok = MemoryBackend.clear(state)
@@ -59,7 +59,7 @@ defmodule Youtex.Cache.MemoryBackendTest do
 
   test "deletes entries", %{state: state} do
     :ok = MemoryBackend.put("key1", "value1", 10_000, state)
-    assert {:ok, "value1"} = MemoryBackend.get("key1", state)
+    assert "value1" = MemoryBackend.get("key1", state)
 
     :ok = MemoryBackend.delete("key1", state)
     assert nil == MemoryBackend.get("key1", state)
@@ -79,6 +79,6 @@ defmodule Youtex.Cache.MemoryBackendTest do
 
     # Expired entry should be gone, valid entry should remain
     assert nil == MemoryBackend.get("expired", state)
-    assert {:ok, "value"} = MemoryBackend.get("valid", state)
+    assert "value" = MemoryBackend.get("valid", state)
   end
 end

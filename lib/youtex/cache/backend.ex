@@ -25,9 +25,10 @@ defmodule Youtex.Cache.Backend do
 
   @doc """
   Retrieve a value from the cache by key.
-  Returns nil if the key is not found or if the entry has expired.
+  Returns the stored value if found, nil if the key is not found or if the entry has expired.
+  The stored value is returned as-is, without wrapping in an {:ok, value} tuple.
   """
-  @callback get(key(), term()) :: {:ok, value()} | nil | {:error, term()}
+  @callback get(key(), term()) :: value() | nil | {:error, term()}
 
   @doc """
   Delete an entry from the cache by key.

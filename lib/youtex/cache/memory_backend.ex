@@ -47,7 +47,7 @@ defmodule Youtex.Cache.MemoryBackend do
     case :ets.lookup(state.table, key) do
       [{^key, value, expiry}] ->
         if System.system_time(:millisecond) < expiry do
-          {:ok, value}
+          value
         else
           # Delete expired entry
           :ets.delete(state.table, key)

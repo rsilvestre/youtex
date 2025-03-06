@@ -69,7 +69,7 @@ defmodule Youtex.Cache.DiskBackend do
         now = System.system_time(:millisecond)
 
         if now < expiry do
-          {:ok, deserialize(serialized_value)}
+          deserialize(serialized_value)
         else
           # Delete expired entry
           :dets.delete(state.table, key)

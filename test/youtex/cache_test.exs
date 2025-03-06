@@ -62,13 +62,13 @@ defmodule Youtex.CacheTest do
     # Cache the transcript list
     Cache.put_transcript_list(video_id, {:ok, transcript_list})
 
-    # Retrieve from cache and unwrap the double-wrapped result
+    # Retrieve from cache
     case Cache.get_transcript_list(video_id) do
-      {:ok, {:ok, cached_list}} ->
+      {:ok, cached_list} ->
         assert cached_list == transcript_list
 
       other ->
-        flunk("Expected {:ok, {:ok, list}}, got: #{inspect(other)}")
+        flunk("Expected {:ok, list}, got: #{inspect(other)}")
     end
   end
 
@@ -95,13 +95,13 @@ defmodule Youtex.CacheTest do
     # Cache the transcript content
     Cache.put_transcript_content(video_id, language, {:ok, transcript})
 
-    # Retrieve from cache and unwrap the double-wrapped result
+    # Retrieve from cache
     case Cache.get_transcript_content(video_id, language) do
-      {:ok, {:ok, cached}} ->
+      {:ok, cached} ->
         assert cached == transcript
 
       other ->
-        flunk("Expected {:ok, {:ok, transcript}}, got: #{inspect(other)}")
+        flunk("Expected {:ok, transcript}, got: #{inspect(other)}")
     end
   end
 
@@ -125,13 +125,13 @@ defmodule Youtex.CacheTest do
 
     Cache.put_transcript_list(video_id, {:ok, transcript_list})
 
-    # Verify cache has the item (unwrap the double-wrapped result)
+    # Verify cache has the item
     case Cache.get_transcript_list(video_id) do
-      {:ok, {:ok, cached_list}} ->
+      {:ok, cached_list} ->
         assert cached_list == transcript_list
 
       other ->
-        flunk("Expected {:ok, {:ok, list}}, got: #{inspect(other)}")
+        flunk("Expected {:ok, list}, got: #{inspect(other)}")
     end
 
     # Clear cache
@@ -168,11 +168,11 @@ defmodule Youtex.CacheTest do
       
       # Retrieve from cache
       case Cache.get_transcript_list(video_id) do
-        {:ok, {:ok, cached_list}} ->
+        {:ok, cached_list} ->
           assert cached_list == transcript_list
           
         other ->
-          flunk("Expected {:ok, {:ok, list}}, got: #{inspect(other)}")
+          flunk("Expected {:ok, list}, got: #{inspect(other)}")
       end
     end
   end

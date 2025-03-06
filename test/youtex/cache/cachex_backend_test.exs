@@ -56,7 +56,7 @@ defmodule Youtex.Cache.CachexBackendTest do
     end)
 
     result = CachexBackend.get(test_key, state)
-    assert result == {:ok, test_value}
+    assert result == test_value
 
     # Test nil result
     :meck.expect(Cachex, :get, fn _cache_name, _key -> {:ok, nil} end)

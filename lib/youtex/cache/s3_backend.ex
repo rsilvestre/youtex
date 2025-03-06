@@ -80,7 +80,7 @@ defmodule Youtex.Cache.S3Backend do
       _expiry ->
         # Valid entry, get from S3
         case get_value(key, state) do
-          {:ok, value} -> {:ok, value}
+          {:ok, value} -> value
           _error -> nil
         end
     end

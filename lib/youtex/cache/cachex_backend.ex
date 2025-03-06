@@ -117,7 +117,7 @@ defmodule Youtex.Cache.CachexBackend do
   def get(key, state) do
     case Cachex.get(state.cache, key) do
       {:ok, nil} -> nil
-      {:ok, value} -> {:ok, value}
+      {:ok, value} -> value
       _error -> nil
     end
   end

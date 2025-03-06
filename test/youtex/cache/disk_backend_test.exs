@@ -34,12 +34,12 @@ defmodule Youtex.Cache.DiskBackendTest do
 
     # Retrieve value
     case DiskBackend.get(test_key, state) do
-      {:ok, value} ->
+      %{data: data} ->
         # Due to serialization/deserialization, we need to compare contents
-        assert value.data == test_value.data
+        assert data == test_value.data
 
       other ->
-        flunk("Expected {:ok, value}, got: #{inspect(other)}")
+        flunk("Expected value, got: #{inspect(other)}")
     end
   end
 
@@ -69,8 +69,8 @@ defmodule Youtex.Cache.DiskBackendTest do
     :ok = DiskBackend.put("key2", "value2", 10_000, state)
 
     # Verify entries exist
-    assert {:ok, "value1"} = DiskBackend.get("key1", state)
-    assert {:ok, "value2"} = DiskBackend.get("key2", state)
+    assert "value1" = DiskBackend.get("key1", state)
+    assert "value2" = DiskBackend.get("key2", state)
 
     # Clear all entries
     :ok = DiskBackend.clear(state)
@@ -82,7 +82,7 @@ defmodule Youtex.Cache.DiskBackendTest do
 
   test "deletes entries", %{state: state} do
     :ok = DiskBackend.put("key1", "value1", 10_000, state)
-    assert {:ok, "value1"} = DiskBackend.get("key1", state)
+    assert "value1" = DiskBackend.get("key1", state)
 
     :ok = DiskBackend.delete("key1", state)
     assert nil == DiskBackend.get("key1", state)
@@ -102,6 +102,6 @@ defmodule Youtex.Cache.DiskBackendTest do
 
     # Expired entry should be gone, valid entry should remain
     assert nil == DiskBackend.get("expired", state)
-    assert {:ok, "value"} = DiskBackend.get("valid", state)
+    assert "value" = DiskBackend.get("valid", state)
   end
 end
