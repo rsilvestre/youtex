@@ -58,50 +58,59 @@ defmodule Youtex.Cache.CachexBackend do
 
   @impl true
   def init(options) do
-    case ensure_dependencies_loaded() do
-      {:ok, _} ->
-        # Get cache name from options or generate a default
-        cache_name = Keyword.get(options, :table_name, :youtex_cache)
-        distributed = Keyword.get(options, :distributed, false)
-
-        # Get TTL settings
-        default_ttl = Keyword.get(options, :default_ttl, :timer.hours(24))
-        cleanup_interval = Keyword.get(options, :cleanup_interval, :timer.minutes(10))
-
-        # Additional options for Cachex
-        additional_opts = Keyword.get(options, :cachex_options, [])
-
-        # Start Cachex if it's not already running
-        cache_options =
-          [
-            expiration: [
-              default: default_ttl,
-              interval: cleanup_interval
-            ],
-            nodes: if(distributed and Node.alive?(), do: Node.list(), else: []),
-            distributed: distributed
-          ] ++ additional_opts
-
-        # Start Cachex or use existing one
-        result = Cachex.start_link(cache_name, cache_options)
-        
-        case result do
-          {:ok, _pid} -> 
-            {:ok, %{cache: cache_name}}
-          
-          # If any type of error occurs, just return error
-          {:error, reason} ->
-            # If it's because the cache is already started, that's okay
-            if is_tuple(reason) and tuple_size(reason) > 0 and elem(reason, 0) == :already_started do
-              {:ok, %{cache: cache_name}}
-            else
-              {:error, reason}
-            end
-        end
-
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, _} <- ensure_dependencies_loaded(),
+         cache_config <- build_cache_config(options),
+         {:ok, _} <- start_cachex(cache_config) do
+      {:ok, %{cache: cache_config.cache_name}}
+    else
+      {:error, reason} -> {:error, reason}
     end
+  end
+
+  # Extract configuration from options
+  defp build_cache_config(options) do
+    cache_name = Keyword.get(options, :table_name, :youtex_cache)
+    distributed = Keyword.get(options, :distributed, false)
+    default_ttl = Keyword.get(options, :default_ttl, :timer.hours(24))
+    cleanup_interval = Keyword.get(options, :cleanup_interval, :timer.minutes(10))
+    additional_opts = Keyword.get(options, :cachex_options, [])
+    
+    nodes = if(distributed and Node.alive?(), do: Node.list(), else: [])
+    
+    cache_options = [
+      expiration: [
+        default: default_ttl,
+        interval: cleanup_interval
+      ],
+      nodes: nodes,
+      distributed: distributed
+    ] ++ additional_opts
+    
+    %{
+      cache_name: cache_name,
+      cache_options: cache_options
+    }
+  end
+  
+  # Start Cachex instance with the given configuration
+  defp start_cachex(config) do
+    case Cachex.start_link(config.cache_name, config.cache_options) do
+      {:ok, pid} -> 
+        {:ok, pid}
+      
+      {:error, reason} = error ->
+        # If it's because the cache is already started, that's okay
+        if already_started?(reason) do
+          {:ok, :already_started}
+        else
+          error
+        end
+    end
+  end
+  
+  # Check if the error indicates that the cache is already started
+  defp already_started?(reason) do
+    is_tuple(reason) and tuple_size(reason) > 0 and elem(reason, 0) == :already_started
   end
 
   @impl true
