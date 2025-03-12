@@ -24,7 +24,7 @@ defmodule Youtex do
 
       # Start with default memory backend
       Youtex.start()
-      
+
       # Start with custom configuration
       Youtex.start(backends: %{
         transcript_lists: %{
@@ -57,13 +57,13 @@ defmodule Youtex do
       {:miss, nil} ->
         # Not in cache, fetch and cache it
         fetch_and_cache_transcript_list(video_id)
-        
+
       {:ok, result} ->
         {:ok, result}
-        
+
       {:error, _reason} = error ->
         error
-        
+
       _other ->
         # Fallback for unexpected responses
         fetch_and_cache_transcript_list(video_id)
@@ -108,13 +108,13 @@ defmodule Youtex do
       {:miss, nil} ->
         # Not in cache, fetch and cache it
         fetch_and_cache_transcript_content(video_id, language)
-        
+
       {:ok, result} ->
         {:ok, result}
-        
+
       {:error, _reason} = error ->
         error
-        
+
       _other ->
         # Fallback for unexpected responses
         fetch_and_cache_transcript_content(video_id, language)

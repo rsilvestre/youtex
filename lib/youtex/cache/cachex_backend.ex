@@ -14,7 +14,7 @@ defmodule Youtex.Cache.CachexBackend do
   To configure this backend, add the following to your config:
 
   ```elixir
-  config :youtex, 
+  config :youtex,
     cache_backends: %{
       transcript_lists: %{
         backend: Youtex.Cache.CachexBackend,
@@ -42,7 +42,7 @@ defmodule Youtex.Cache.CachexBackend do
   Node.connect(:"node2@example.com")
 
   # On node2@example.com
-  Node.connect(:"node1@example.com") 
+  Node.connect(:"node1@example.com")
   ```
 
   ## Caveats
@@ -95,7 +95,7 @@ defmodule Youtex.Cache.CachexBackend do
         else
           {:error, reason} -> {:error, reason}
         end
-        
+
       {:error, %NimbleOptions.ValidationError{} = error} ->
         {:error, Exception.message(error)}
     end
@@ -108,9 +108,9 @@ defmodule Youtex.Cache.CachexBackend do
     default_ttl = options[:default_ttl]
     cleanup_interval = options[:cleanup_interval]
     additional_opts = options[:cachex_options]
-    
+
     nodes = if(distributed and Node.alive?(), do: Node.list(), else: [])
-    
+
     cache_options = [
       expiration: [
         default: default_ttl,
@@ -119,19 +119,19 @@ defmodule Youtex.Cache.CachexBackend do
       nodes: nodes,
       distributed: distributed
     ] ++ additional_opts
-    
+
     %{
       cache_name: cache_name,
       cache_options: cache_options
     }
   end
-  
+
   # Start Cachex instance with the given configuration
   defp start_cachex(config) do
     case Cachex.start_link(config.cache_name, config.cache_options) do
-      {:ok, pid} -> 
+      {:ok, pid} ->
         {:ok, pid}
-      
+
       {:error, reason} = error ->
         # If it's because the cache is already started, that's okay
         if already_started?(reason) do
@@ -141,7 +141,7 @@ defmodule Youtex.Cache.CachexBackend do
         end
     end
   end
-  
+
   # Check if the error indicates that the cache is already started
   defp already_started?(reason) do
     is_tuple(reason) and tuple_size(reason) > 0 and elem(reason, 0) == :already_started

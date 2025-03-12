@@ -20,7 +20,7 @@ defmodule Youtex.Cache.MemoryBackend do
   @options_schema [
     table_name: [
       type: :atom,
-      default: :youtex_cache, 
+      default: :youtex_cache,
       doc: "The name of the ETS table to use for cache storage"
     ],
     max_size: [

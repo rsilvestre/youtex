@@ -5,7 +5,7 @@ config :youtex,
   # General cache settings
   cache_ttl: 86_400_000,                    # TTL (time-to-live) - 1 day in milliseconds (default)
   cache_cleanup_interval: 3_600_000,        # Cleanup interval - every hour (default)
-  
+
   # Configure disk cache for production
   cache_backends: %{
     transcript_lists: %{

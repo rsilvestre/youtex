@@ -4,7 +4,7 @@ defmodule Youtex.Cache.DiskBackend do
 
   This backend stores cache entries on disk, making them persistent across application restarts.
   It uses DETS tables under the hood, which are disk-based implementations of ETS.
-  
+
   ## Configuration
 
   The DiskBackend supports the following options:

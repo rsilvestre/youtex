@@ -7,13 +7,13 @@ defmodule Youtex.CacheTest do
     case Process.whereis(Cache) do
       nil ->
         # Choose backend based on available dependencies (MemoryBackend or CachexBackend)
-        backend = 
+        backend =
           if Code.ensure_loaded?(Cachex) do
             Youtex.Cache.CachexBackend
           else
             Youtex.Cache.MemoryBackend
           end
-        
+
         opts = [
           backends: %{
             transcript_lists: %{
@@ -35,9 +35,9 @@ defmodule Youtex.CacheTest do
 
     # Clear cache before each test
     Cache.clear()
-    
+
     # Pass the backend type used to tests
-    backend_type = 
+    backend_type =
       if Code.ensure_loaded?(Cachex) do
         :cachex
       else
@@ -140,7 +140,7 @@ defmodule Youtex.CacheTest do
     # Verify item is gone
     assert Cache.get_transcript_list(video_id) == {:miss, nil}
   end
-  
+
   @tag :cachex
   test "runs with Cachex backend if available", %{backend_type: backend_type} do
     # Skip if Cachex is not available
@@ -152,7 +152,7 @@ defmodule Youtex.CacheTest do
       # This test verifies that the code can run using the Cachex backend
       # by storing and retrieving a value
       video_id = "cachex_test_video"
-      
+
       transcript_list = [
         %Transcript{
           language_code: "en",
@@ -162,15 +162,15 @@ defmodule Youtex.CacheTest do
           url: "https://example.com/cachex_test"
         }
       ]
-      
+
       # Cache the transcript list
       Cache.put_transcript_list(video_id, {:ok, transcript_list})
-      
+
       # Retrieve from cache
       case Cache.get_transcript_list(video_id) do
         {:ok, cached_list} ->
           assert cached_list == transcript_list
-          
+
         other ->
           flunk("Expected {:ok, list}, got: #{inspect(other)}")
       end

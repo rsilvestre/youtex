@@ -7,28 +7,28 @@ defmodule Youtex.Cache.MemoryBackendTest do
     test "validates options with NimbleOptions" do
       # Test with valid options
       assert {:ok, _state} = MemoryBackend.init(
-        table_name: :test_memory_cache, 
+        table_name: :test_memory_cache,
         max_size: 500
       )
-      
+
       # Test with invalid max_size (negative value)
       assert {:error, error_message} = MemoryBackend.init(max_size: -10)
       assert error_message =~ "expected a positive integer"
-      
+
       # Test with invalid max_size type
       assert {:error, error_message} = MemoryBackend.init(max_size: "not_a_number")
       assert error_message =~ "expected a positive integer"
-      
+
       # Test with invalid table_name type
       assert {:error, error_message} = MemoryBackend.init(table_name: "not_an_atom")
       assert error_message =~ "expected atom"
-      
+
       # Test with unknown option
       assert {:error, error_message} = MemoryBackend.init(unknown_option: "value")
       assert error_message =~ "unknown options"
     end
   end
-  
+
   describe "cache operations" do
     setup do
       {:ok, state} = MemoryBackend.init(table_name: :test_memory_cache)
