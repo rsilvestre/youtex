@@ -25,8 +25,8 @@ defmodule Youtex.Transcript do
   use TypedStruct
 
   typedstruct enforce: true do
-    field :url, String.t
-    field :name, String.t
+    field :url, String.t()
+    field :name, String.t()
     field :language_code, language
     field :generated, boolean
     field :sentences, sentence_list, default: []
@@ -39,16 +39,21 @@ defmodule Youtex.Transcript do
       url: url(caption),
       name: name(caption),
       language_code: language_code(caption),
-      generated: generated(caption),
+      generated: generated(caption)
     }
   end
 
   @spec for_language(transcript_list, language) :: transcript_found | error
-  def for_language(transcript_list, language) do
+  def for_language(transcript_list, language) when is_list(transcript_list) do
     transcript_list
     |> Enum.filter(&(&1.language_code == language))
     |> List.first()
     |> transcript_found_or_error()
+  end
+
+  # Handle case where transcript_list is wrapped in {:ok, transcript_list}
+  def for_language({:ok, transcript_list}, language) do
+    for_language(transcript_list, language)
   end
 
   defp url(%{"baseUrl" => url}), do: url
@@ -65,5 +70,4 @@ defmodule Youtex.Transcript do
 
   defp transcript_found_or_error(nil), do: {:error, :not_found}
   defp transcript_found_or_error(transcript), do: {:ok, transcript}
-
 end

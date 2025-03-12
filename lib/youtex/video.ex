@@ -10,10 +10,10 @@ defmodule Youtex.Video do
 
   typedstruct enforce: true do
     field :id, video_id
-    field :url, String.t
+    field :url, String.t()
   end
 
   def new(id) do
-    struct! __MODULE__, id: id, url: @base_url <> id
+    struct!(__MODULE__, id: id, url: @base_url <> id)
   end
 end
