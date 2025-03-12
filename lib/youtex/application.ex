@@ -27,7 +27,7 @@ defmodule Youtex.Application do
     cache_dirs =
       cache_backends
       |> Map.values()
-      |> Enum.map(fn config -> 
+      |> Enum.map(fn config ->
         backend_opts = config[:backend_options] || []
         Keyword.get(backend_opts, :cache_dir)
       end)
@@ -38,9 +38,9 @@ defmodule Youtex.Application do
     Enum.each(cache_dirs, fn dir ->
       # Create directory and log the result
       case File.mkdir_p(dir) do
-        :ok -> 
+        :ok ->
           IO.puts("Cache directory created: #{dir}")
-        {:error, reason} -> 
+        {:error, reason} ->
           IO.warn("Failed to create cache directory #{dir}: #{inspect(reason)}")
       end
     end)

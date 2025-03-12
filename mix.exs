@@ -53,7 +53,7 @@ defmodule Youtex.MixProject do
       {:ex_aws_s3, "~> 2.4", optional: true},
       {:sweet_xml, "~> 0.7", optional: true},
       {:configparser_ex, "~> 4.0", optional: true},
-      
+
       # Optional Cachex dependency for distributed caching
       {:cachex, "~> 3.6", optional: true},
       # Mock library for testing

@@ -10,11 +10,11 @@ defmodule Youtex.Cache.S3Backend do
   - ex_aws_s3
   - sweet_xml
   - configparser_ex (optional, for reading AWS credentials from files)
-  
+
   ## Configuration
-  
+
   The S3Backend supports the following options:
-  
+
   * `:bucket` - S3 bucket name (defaults to "youtex-cache")
   * `:prefix` - Prefix for cache objects in the bucket (defaults to "cache")
   * `:region` - AWS region (defaults to "us-east-1")
@@ -51,7 +51,7 @@ defmodule Youtex.Cache.S3Backend do
   def init(options) do
     with {:ok, _} <- ensure_dependencies_loaded(),
          {:ok, validated_options} <- NimbleOptions.validate(options, @options_schema) do
-      
+
       bucket = validated_options[:bucket]
       prefix = validated_options[:prefix]
       region = validated_options[:region]
@@ -69,7 +69,7 @@ defmodule Youtex.Cache.S3Backend do
     else
       {:error, %NimbleOptions.ValidationError{} = error} ->
         {:error, Exception.message(error)}
-        
+
       {:error, reason} ->
         {:error, reason}
     end
