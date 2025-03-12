@@ -1,6 +1,6 @@
 # Youtex [![Build Status](https://github.com/patrykwozinski/youtex/workflows/CI/badge.svg)](https://github.com/patrykwozinski/youtex/actions) [![Hex pm](https://img.shields.io/hexpm/v/youtex.svg?style=flat)](https://hex.pm/packages/youtex)
 
-A tool to list or to retrieve video transcriptions from Youtube. Youtex allows you to easily fetch and parse subtitles/closed captions from YouTube videos.
+A tool to list or to retrieve video transcriptions from Youtube.
 
 ## Installation
 
@@ -24,9 +24,7 @@ This package requires Elixir 1.15 or later and has the following dependencies:
 
 There are 2 main functions for fetching transcripts:
 
-### List Available Transcripts
-
-**Youtex.list_transcripts(video_id)**
+### List available transcripts
 
 Lists all available transcripts for a given YouTube video.
 
@@ -54,7 +52,7 @@ Youtex.list_transcripts("lxYFOM3UJzo")
 Fetches a specific transcript by language code (defaults to "en" for English).
 
 ```elixir
-Youtex.get_transcription("lxYFOM3UJzo")
+Youtex.get_transcription("lxYFOM3UJzo")  # Defaults to English ("en")
 
 {:ok,
  %Youtex.Transcript{
@@ -619,3 +617,61 @@ Below is a list of potential improvements for the project:
 
 Youtex is released under the MIT License. See the LICENSE file for details.
 
+```elixir
+Youtex.get_transcription("lxYFOM3UJzo", "es")  # Get Spanish transcript
+```
+
+## Error Handling
+
+Youtex returns tagged tuples for success and error cases:
+
+```elixir
+case Youtex.get_transcription("video_id") do
+  {:ok, transcript} -> # Process transcript
+  {:error, :not_found} -> # Handle missing transcript
+end
+```
+
+### Bang Methods
+
+If you don't need to pattern match `{:ok, data}` and `{:error, reason}`, there are also [trailing bang](https://hexdocs.pm/elixir/1.11.4/naming-conventions.html#trailing-bang-foo) versions for every function:
+
+```elixir
+# Raises an exception on error
+transcripts = Youtex.list_transcripts!("lxYFOM3UJzo")
+transcript = Youtex.get_transcription!("lxYFOM3UJzo")
+```
+
+## Data Structures
+
+### Transcript
+
+The `Youtex.Transcript` struct contains:
+
+- `language_code`: Two-letter language code (e.g., "en", "es")
+- `name`: Language name (e.g., "English", "Spanish")
+- `generated`: Boolean indicating if transcript was auto-generated
+- `url`: URL to the transcript resource
+- `sentences`: List of sentence structs (when fetched with `get_transcription`)
+
+### Sentence
+
+The `Youtex.Transcript.Sentence` struct contains:
+
+- `text`: The transcribed text
+- `start`: Start time in seconds
+- `duration`: Duration of the sentence in seconds
+
+## Limitations
+
+- Works only with videos that have available transcripts
+- Language codes must match YouTube's language codes
+- Requires Elixir ~> 1.11
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
