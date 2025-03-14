@@ -79,7 +79,7 @@ defmodule Youtex.MixProject do
     [
       files: ~w(lib .formatter.exs mix.exs README*),
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/patrykwozinski/youtex"}
+      links: %{"GitHub" => "https://github.com/rsilvestre/youtex"}
     ]
   end
 end
