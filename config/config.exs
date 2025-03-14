@@ -9,21 +9,19 @@ config :youtex,
   # Configure which backend to use for each cache type
   cache_backends: %{
     # Memory backend (default)
-    transcript_lists: %{
-      backend: Youtex.Cache.MemoryBackend,
+    transcript_lists: [
+      backend: YouCache.Backend.Memory,
       backend_options: [
-        table_name: :transcript_lists_cache,
         max_size: 1000                       # Max entries in memory
       ]
-    },
+    ],
 
     # Disk backend example
-    transcript_contents: %{
-      backend: Youtex.Cache.DiskBackend,
+    transcript_contents: [
+      backend: YouCache.Backend.Disk,
       backend_options: [
-        table_name: :transcript_contents_cache,
         cache_dir: "priv/youtex_cache",      # Directory for cache files
         max_size: 10000                      # Max entries on disk
       ]
-    }
+    ]
   }

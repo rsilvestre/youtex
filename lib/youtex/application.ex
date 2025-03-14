@@ -11,7 +11,8 @@ defmodule Youtex.Application do
     cache_config = Application.get_env(:youtex, :cache, [])
 
     children = [
-      {Youtex.Cache, cache_config}
+      # Pass the app_name to allow YouCache to read configuration from :youtex app
+      {Youtex.Cache, [app_name: :youtex] ++ cache_config}
     ]
 
     opts = [strategy: :one_for_one, name: Youtex.Supervisor]
